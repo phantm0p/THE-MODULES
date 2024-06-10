@@ -7,7 +7,7 @@ from ..features.insta import download_instagram_reel
 import shutil
 
 # Feature: Download Instagram media
-@bot.on_message(filters.command("insta") & filters.private)
+@bot.on_message(filters.command("insta"))
 async def insta_command(client, message):
     if len(message.command) < 2:
         await message.reply("Please provide an Instagram media link. Usage: /insta {instagram_media_link}")

@@ -1,7 +1,7 @@
 # BOT/features/font.py
 
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-import key
+import BOT.key as key
 
 def get_font_buttons(text):
     buttons = [

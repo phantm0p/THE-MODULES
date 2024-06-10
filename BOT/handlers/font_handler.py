@@ -15,7 +15,7 @@ async def font_handler(client, message):
     await message.reply_text(
         text,
         reply_markup=font.get_font_buttons(text),
-        reply_to_message_id=message.message_id
+        reply_to_message_id=message.id # Fix the attribute name here
     )
 
 # Callback Query Handler: Apply Font Style
