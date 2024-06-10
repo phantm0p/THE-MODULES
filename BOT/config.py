@@ -8,3 +8,4 @@ MONGO_URL = "mongodb+srv://darkth0ughtss00:loniko0908@music.njvuzcz.mongodb.net/
 OWNER_ID = 5630057244
 DEV_USERS = [5630057244]
 LOGGING_CHAT_ID = -1001890720099
+ADMINS = 5630057244

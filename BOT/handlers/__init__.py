@@ -7,5 +7,5 @@ from .pin_handler import *
 from .telegraph_handler import *
 from .font_handler import *
 from .speed_handler import *
-from .upload_handler import *
+
 
