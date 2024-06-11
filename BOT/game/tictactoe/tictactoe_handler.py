@@ -1,3 +1,5 @@
+#tictactoe_handler.py
+
 from pyrogram import filters, Client
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from ...bot import bot
@@ -6,10 +8,11 @@ from ...game.gamedata import get_user, update_balance, create_user
 import random
 
 games = {}
+active_chats = set()
 
-def get_game_key(chat_id, user_id1, user_id2):
-    """Create a unique key for each game based on chat_id and user IDs."""
-    return f"{chat_id}_{min(user_id1, user_id2)}_{max(user_id1, user_id2)}"
+def get_game_key(chat_id):
+    """Create a unique key for each game based on chat_id."""
+    return f"{chat_id}"
 
 def get_board_markup(board):
     buttons = []
@@ -29,12 +32,13 @@ async def start_tictactoe(client: Client, message: Message):
     if challenger == opponent:
         return await message.reply_text("You cannot challenge yourself.")
 
-    game_key = get_game_key(chat_id, challenger, opponent)
+    game_key = get_game_key(chat_id)
 
-    if game_key in games:
-        return await message.reply_text("A game is already in progress between these users in this chat.")
+    if game_key in active_chats:
+        return await message.reply_text("There is already an ongoing game in this chat.")
 
-    games[game_key] = {'challenger': challenger}
+    active_chats.add(game_key)
+    games[game_key] = {'challenger': challenger, 'opponent': opponent}
     await message.reply_text(
         f"{message.reply_to_message.from_user.mention}, you have been challenged to a Tic-Tac-Toe game by {message.from_user.mention}.",
         reply_markup=get_accept_markup(challenger)
@@ -46,9 +50,9 @@ async def accept_challenge(client: Client, query: CallbackQuery):
     challenger_id = int(query.data.split('_')[1])
     chat_id = query.message.chat.id
 
-    game_key = get_game_key(chat_id, challenger_id, opponent)
+    game_key = get_game_key(chat_id)
 
-    if game_key not in games or games[game_key].get('challenger') != challenger_id:
+    if game_key not in games or games[game_key].get('challenger') != challenger_id or games[game_key].get('opponent') != opponent:
         return await query.answer("Invalid challenge or you are not the challenged user.", show_alert=True)
 
     await query.message.delete()  # Delete the challenge message
@@ -80,14 +84,9 @@ async def handle_move(client: Client, query: CallbackQuery):
     user_id = query.from_user.id
     chat_id = query.message.chat.id
 
-    # Find the game key where the user is a participant
-    game_key = None
-    for key, game in games.items():
-        if user_id in [game.players['X'], game.players['O']]:
-            game_key = key
-            break
+    game_key = get_game_key(chat_id)
 
-    if game_key is None:
+    if game_key not in games:
         return await query.answer("You are not part of this game.", show_alert=True)
 
     game = games[game_key]
@@ -126,6 +125,7 @@ async def handle_move(client: Client, query: CallbackQuery):
             reply_markup=get_board_markup(game.board)
         )
         del games[game_key]
+        active_chats.remove(game_key)
     elif not game.empty_squares():
         await notification_message.edit_text(
             "It's a tie!"
@@ -135,6 +135,7 @@ async def handle_move(client: Client, query: CallbackQuery):
             reply_markup=get_board_markup(game.board)
         )
         del games[game_key]
+        active_chats.remove(game_key)
     else:
         next_player_id = game.players[game.current_turn]
         next_player = await client.get_users(next_player_id)
@@ -151,15 +152,11 @@ async def end_tictactoe(client: Client, message: Message):
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    # Find the game key where the user is a participant
-    game_key = None
-    for key, game in games.items():
-        if user_id in [game.players['X'], game.players['O']]:
-            game_key = key
-            break
+    game_key = get_game_key(chat_id)
 
-    if game_key is None:
+    if game_key not in games:
         return await message.reply_text("You are not part of any ongoing game.")
 
     del games[game_key]
+    active_chats.remove(game_key)
     await message.reply_text("The Tic-Tac-Toe game has been ended.")
