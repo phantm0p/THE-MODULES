@@ -1,28 +1,28 @@
 # BOT/handlers/ytsearch_handler.py
 
 from pyrogram import Client, filters
-from ..features.ytsearch import download_audio_from_youtube, cleanup_file
-from ..bot import bot
-
-@bot.on_message(filters.command("song") & filters.text)
+from ..features.ytsearch import search_song, download_audio
+import os
+from ..bot import bot 
+@bot.on_message(filters.command("song"))
 async def song_handler(client, message):
-    query = " ".join(message.command[1:])
-    if not query:
-        await message.reply("Please provide the name of the song. Usage: /song {song name}")
+    if len(message.command) < 2:
+        await message.reply_text("Please specify the name of the song.")
         return
-    
-    await message.reply("Searching for the song...")
-    
-    try:
-        # Search for the song on YouTube and download the audio
-        audio_file, title = download_audio_from_youtube(query)
-        await message.reply(f"Downloading audio for: {title}...")
 
-        # Send the audio file to the user
-        await message.reply_audio(audio=audio_file, title=title)
+    song_name = " ".join(message.command[1:])
+    await message.reply_text(f"Searching for {song_name} on YouTube...")
 
-        # Clean up the temporary file
-        cleanup_file(audio_file)
-        
-    except Exception as e:
-        await message.reply(f"An error occurred: {e}")
+    video_url = search_song(song_name)
+    if not video_url:
+        await message.reply_text("Song not found. Please try with a different name.")
+        return
+
+    await message.reply_text("Downloading the song...")
+    file_path = download_audio(video_url)
+
+    if file_path and os.path.exists(file_path):
+        await message.reply_audio(audio=file_path, caption=f"Here is your song: {song_name}")
+        os.remove(file_path)
+    else:
+        await message.reply_text("Failed to download the song. Please try again.")

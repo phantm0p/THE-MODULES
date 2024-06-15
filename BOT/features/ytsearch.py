@@ -1,35 +1,31 @@
 # BOT/features/ytsearch.py
 
+from youtubesearchpython import VideosSearch
 import yt_dlp
 import os
-import uuid
 
-def download_audio_from_youtube(query):
-    # Create a unique filename
-    unique_filename = f"{uuid.uuid4()}.mp3"
-    
+def search_song(song_name):
+    videos_search = VideosSearch(song_name, limit=1)
+    results = videos_search.result()['result']
+    if results:
+        video_url = results[0]['link']
+        return video_url
+    else:
+        return None
+
+def download_audio(url):
     ydl_opts = {
         'format': 'bestaudio/best',
+        'outtmpl': 'downloads/%(title)s.%(ext)s',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
-        'outtmpl': unique_filename,
-        'quiet': True,  # Suppress yt-dlp output
-        'noplaylist': True,  # Do not download playlists
-        'default_search': 'ytsearch',  # Treat query as a YouTube search
-        'max_downloads': 1,  # Download only the first result
+        'quiet': True,
     }
-    
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # Download the best audio and extract it as mp3
-            info_dict = ydl.extract_info(query, download=True)
-            return unique_filename, info_dict.get('title', 'Unknown Title')
-    except Exception as e:
-        raise Exception(f"yt-dlp error: {e}")
 
-def cleanup_file(file_path):
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(url, download=True)
+        filename = ydl.prepare_filename(info_dict)
+        return filename.replace(".webm", ".mp3").replace(".m4a", ".mp3")
