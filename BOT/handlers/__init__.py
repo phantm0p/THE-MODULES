@@ -22,3 +22,4 @@ from .anime_handler import *
 from .sex_handler import *
 from .cosplay_handler import *
 from .ud import *
+from .hangman_handler import *

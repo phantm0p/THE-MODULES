@@ -1,4 +1,3 @@
-# Pyrogram bot code
 from pyrogram import filters
 from pyrogram.types import Message
 from ..bot import bot
@@ -18,6 +17,9 @@ async def handle_anime(client, message: Message):
         image.save(image_byte_array, format='JPEG')
         image_byte_array.seek(0)
 
+        # Truncate the description to 30 words
+        description = " ".join(anime_details['description'].split()[:30]) + "..."
+
         caption = (
             f"🔹 **{anime_details['title']['english'] or anime_details['title']['romaji'] or anime_details['title']['native']}**\n"
             f"🔸 **Type**: {anime_details['format']}\n"
@@ -28,7 +30,7 @@ async def handle_anime(client, message: Message):
             f"🔸 **Last Aired**: {anime_details['endDate']['day']}-{anime_details['endDate']['month']}-{anime_details['endDate']['year']}\n"
             f"🔸 **Episodes**: {anime_details['episodes']}\n"
             f"🔸 **Duration**: {anime_details['duration']} minutes per episode\n"
-            f"\n**Synopsis**:\n{anime_details['description']}"
+            f"\n**Synopsis**:\n{description}"
         )
         
         await client.send_photo(message.chat.id, image_byte_array, caption=caption)
